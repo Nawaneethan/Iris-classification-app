@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
 from PIL import Image
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 
 # Load the model and label encoder
 model = joblib.load('iris_model.pkl')
@@ -28,6 +30,7 @@ def load_data():
 
 df = load_data()
 
+# -------------------- Data Exploration --------------------
 if options == 'Data Exploration':
     st.header('Data Exploration')
     
@@ -41,7 +44,8 @@ if options == 'Data Exploration':
     st.write(f"Number of rows: {df.shape[0]}")
     st.write(f"Number of columns: {df.shape[1]}")
     st.write("Columns:", df.columns.tolist())
-    
+
+# -------------------- Visualization --------------------
 elif options == 'Visualization':
     st.header('Data Visualization')
     
@@ -67,7 +71,8 @@ elif options == 'Visualization':
     fig, ax = plt.subplots()
     sns.histplot(data=df, x=selected_feature, hue='Species', kde=True)
     st.pyplot(fig)
-    
+
+# -------------------- Prediction --------------------
 elif options == 'Prediction':
     st.header('Flower Species Prediction')
     
@@ -90,7 +95,8 @@ elif options == 'Prediction':
         for i, prob in enumerate(probabilities):
             species = le.inverse_transform([i])[0]
             st.write(f"{species}: {prob:.2%}")
-            
+
+# -------------------- Model Performance --------------------
 elif options == 'Model Performance':
     st.header('Model Performance')
     
@@ -100,16 +106,30 @@ elif options == 'Model Performance':
     - Accuracy: ~96-98% on test data
     - Precision, Recall, and F1-score all above 95% for all classes
     """)
-    
-    # Confusion matrix
-    st.subheader('Confusion Matrix')
-    from sklearn.metrics import confusion_matrix
 
+    # Prepare features (drop ID and target column)
+    X = df.drop(columns=['Id', 'Species'])
+    y = le.transform(df['Species'])  # Encode target
 
+    # Train-test split (same as during model training)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    # Predictions
     y_pred = model.predict(X_test)
+
+    # Confusion matrix
     cm = confusion_matrix(y_test, y_pred)
     fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=le.classes_, yticklabels=le.classes_)
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt='d',
+        cmap='Blues',
+        xticklabels=le.classes_,
+        yticklabels=le.classes_
+    )
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     st.pyplot(fig)
